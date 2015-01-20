@@ -68,7 +68,6 @@ class WidgetAction(argparse.Action):
 			widget=CompoundEntry(self._parent, values)
 		elif option_string == '-l':
 			widget=Label(self._parent, text=values)
-			_grid.x+=1
 		elif option_string == '-r':
 			_grid.set_max(int(values))	
 			_grid.new_row()
