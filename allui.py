@@ -6,6 +6,8 @@
 
 from tkinter import *
 from tkinter.ttk import *
+from tkinter import filedialog
+#from tkFileDialog import askopenfilename
 import subprocess
 import argparse
 
@@ -26,7 +28,15 @@ class GridManager():
 		if(self.column >= self.__max):
 			self.new_row()
 
-_grid = GridManager()
+class AllUIGlobals():
+	def __init__(self):
+		self.exit_on_click=False;
+		self.grid=GridManager()
+		self.prog='AllUI'
+		self.version=self.prog + ' 0.1'
+
+_allui = AllUIGlobals()
+_grid = _allui.grid
 
 
 class CommandButton(Button):
@@ -42,8 +52,9 @@ class CommandButton(Button):
 			command=quit
 		super().__init__(master=master, text=text, command=command)
 	def __run_command(self):
-		print("EXECUTING: " + self.__command)
 		subprocess.call(self.__command + "&", shell=True)
+		if _allui.exit_on_click:
+			quit()
 
 class CompoundEntry(Frame):
 	def __init__(self, parent, prompt):
@@ -68,7 +79,7 @@ class WidgetAction(argparse.Action):
 			widget=CompoundEntry(self._parent, values)
 		elif option_string == '-l':
 			widget=Label(self._parent, text=values)
-		elif option_string == '-r':
+		elif option_string == '-c':
 			_grid.set_max(int(values))	
 			_grid.new_row()
 			return
@@ -83,23 +94,33 @@ class AllUI(Frame):
 		self.parse_args()
 		self.grid(sticky=N+S+E+W)
 	def parse_args(self):
-		parser=argparse.ArgumentParser(description="Generate a GUI")
+		parser=argparse.ArgumentParser(prog=_allui.prog, description="Generate a GUI")
 		parser.add_argument('-l', '--label',nargs=1, action=WidgetAction, parent=self,
 				metavar="LABEL")
 		button_help="Define a button which executes the specified shell command. "
 		button_help+="Put the button label definition after a '#' comment character."
 		parser.add_argument('-b', '--button', nargs=1, action=WidgetAction, 
 				parent=self, metavar="BUTTON", help=button_help)
-		parser.add_argument('-e', action=WidgetAction, parent=self, metavar='NAME')
-		parser.add_argument('-r', action=WidgetAction, parent=self, metavar='MAX')
+		parser.add_argument('-e', action=WidgetAction, parent=self, metavar='NAME',
+				help='Add entry, return "NAME:<contents>" on submit')
+		parser.add_argument('-c', action=WidgetAction, parent=self, metavar='MAX',
+				help='Add new row, set MAX as max columns')
+		parser.add_argument('--exit', action='store_true',
+				help='Button click makes program exit')
+		parser.add_argument('--version', action='version', version=_allui.version)
+		parser.add_argument('-f', action='store_true', 
+				help='Show file selection dialog, print filename on selection')
 		args=parser.parse_args()
-
+		if args.f:
+			self.master.withdraw()
+			print(filedialog.askopenfilename())
+			quit()
+		_allui.exit_on_click=args.exit
 
 def main():
 	root=Tk()
 	win = AllUI(root)
 	root.mainloop()
-
 if __name__ == "__main__":
     main()
 
